@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            background-image: url('https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        h2 {
+            text-align: center;
+            font-size:60px;
+            font-weight:bolder;
+            color:pink;
+        }
+        textarea {
+            width: 30vw;
+            height:25vh;
+            margin: 10px;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            text-align:center;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #usernameDisplay{
+            color:black;
+        }
+        /* Popup styles */
+        .popup {
+            display: none; /* Hidden by default */
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            animation: fadeIn 0.5s; /* Animation for popup */
+        }
+        .popup h3 {
+            text-align: center;
+        }
+        .popup .close {
+            display: block;
+            margin: 10px auto;
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .popup .close:hover {
+            background-color: #0056b3;
+        }
+        /* Overlay */
+        .overlay {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        /* Animation for popup */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        /* Animation for icons */
+        .icon {
+            font-size: 50px;
+            display: block;
+            text-align: center;
+            margin: 10px 0;
+            animation: bounce 0.5s; /* Animation for icons */
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+        /* User details and password change styles */
+        .user-details, .change-password {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Fraud Detection</h2>
+    
+    <!-- User Details Section -->
+    <div class="user-details">
+        <h3>User Details</h3>
+        <p id="usernameDisplay">Username: <strong>{{ username }}</strong></p> <!-- Dynamic username -->
+    </div>
+
+  
+    <form id="predictForm">
+        <textarea name="features" placeholder="Enter 30 features separated by commas" required></textarea>
+        <br/>
+        <button type="submit">Predict</button>
+    </form>
+    <br/>
+    <button onclick="window.location.href='/logout'">Logout</button> <!-- Logout button -->
+    
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Popup -->
+    <div class="popup" id="resultPopup">
+        <div id="resultIcon" class="icon"></div>
+        <h3 id="resultMessage"></h3>
+        <button class="close" onclick="closePopup()">Close</button>
+    </div>
+
+    <script>
+        document.getElementById('predictForm').onsubmit = async function(event) {
+            event.preventDefault();
+            const features = document.querySelector('textarea[name="features"]').value;
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({ features })
+            });
+            const result = await response.json();
+            showPopup(result.result);
+        };
+
+        document.getElementById('changePasswordForm').onsubmit = async function(event) {
+            event.preventDefault();
+            const currentPassword = this.currentPassword.value;
+            const newPassword = this.newPassword.value;
+
+            const response = await fetch('/change-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({ currentPassword, newPassword })
+            });
+
+            const result = await response.json();
+            alert(result.message); // Show success or error message
+        };
+
+        function showPopup(result) {
+            const resultMessage = document.getElementById('resultMessage');
+            const resultIcon = document.getElementById('resultIcon');
+            const overlay = document.getElementById('overlay');
+            const popup = document.getElementById('resultPopup');
+
+            // Set the message and icon based on the result
+            if (result === "Fraudulent") {
+                resultMessage.innerHTML = "Fraudulent Transaction Detected!";
+                resultIcon.innerHTML = "😞"; // Sad face
+            } else {
+                resultMessage.innerHTML = "Transaction is Safe!";
+                resultIcon.innerHTML = "😊"; // Smiling face
+            }
+
+            // Show the overlay and popup
+            overlay.style.display = 'block';
+            popup.style.display = 'block';
+        }
+
+        function closePopup() {
+            const overlay = document.getElementById('overlay');
+            const popup = document.getElementById('resultPopup');
+
+            // Hide the overlay and popup
+            overlay.style.display = 'none';
+            popup.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
